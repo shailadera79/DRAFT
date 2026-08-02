@@ -1,0 +1,35 @@
+name: Windows RDP via Tailscale
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+    timeout-minutes: 360   # max ~6 hours (GitHub's job limit)
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Enable RDP
+        shell: powershell
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          net user runneradmin "${{ secrets.RDP_PASSWORD }}"
+
+      - name: Show connection info
+        shell: powershell
+        run: |
+          Write-Host "================ RDP READY ================"
+          Write-Host "IP Address: $(tailscale ip -4)"
+          Write-Host "Username:   runneradmin"
+          Write-Host "============================================="
+
+      - name: Keep session alive
+        shell: powershell
+        run: Start-Sleep -Seconds 21000   # ~5h50m; adjust as needed

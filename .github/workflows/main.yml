@@ -1,35 +1,47 @@
-name: Windows RDP via Tailscale
+name: Ollama Server Host
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Actions tab se manually start karne ke liye
 
 jobs:
-  rdp:
+  run-ollama:
     runs-on: windows-latest
-    timeout-minutes: 360   # max ~6 hours (GitHub's job limit)
-
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Tailscale connection setup
       - name: Connect to Tailscale
-        uses: tailscale/github-action@v3
+        uses: tailscale/github-action@v2
         with:
-          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
 
-      - name: Enable RDP
-        shell: powershell
+      # Winget se Ollama install karna
+      - name: Install Ollama
+        shell: cmd
         run: |
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-          net user runneradmin "${{ secrets.RDP_PASSWORD }}"
+          winget install Ollama.Ollama --accept-source-agreements --accept-package-agreements
 
-      - name: Show connection info
-        shell: powershell
+      # Background me chal rahe pehle ke Ollama process ko kill karna
+      - name: Kill existing Ollama process
+        shell: cmd
         run: |
-          Write-Host "================ RDP READY ================"
-          Write-Host "IP Address: $(tailscale ip -4)"
-          Write-Host "Username:   runneradmin"
-          Write-Host "============================================="
+          taskkill /f /im ollama.exe 2>nul || exit 0
 
-      - name: Keep session alive
-        shell: powershell
-        run: Start-Sleep -Seconds 21000   # ~5h50m; adjust as needed
+      # Host set karke Ollama serve start karna aur 7B model pull karna
+      - name: Setup Host, Start Ollama and Download 7B Model
+        shell: cmd
+        run: |
+          set OLLAMA_HOST=0.0.0.0
+          start /B ollama serve
+          timeout /t 10 /nobreak
+          ollama pull qwen2.5:7b
+
+      # CMD session/workflow ko open rakhne ke liye infinite loop
+      - name: Keep Workflow Alive
+        shell: cmd
+        run: |
+          echo Ollama Server is running on port 11434...
+          powershell -Command "while ($true) { Start-Sleep -Seconds 3600 }"

@@ -5,7 +5,8 @@ on:
 
 jobs:
   run-ollama:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest # Windows ki jagah Ubuntu (Linux) use karein
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,30 +19,26 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
-      # Winget se Ollama install karna
+      # Ollama install karna
       - name: Install Ollama
-        shell: cmd
         run: |
-          winget install Ollama.Ollama --accept-source-agreements --accept-package-agreements
+          curl -fsSL https://ollama.com/install.sh | sh
 
-      # Background me chal rahe pehle ke Ollama process ko kill karna
+      # Background me chal rahe pehle ke Ollama process ko stop karna
       - name: Kill existing Ollama process
-        shell: cmd
         run: |
-          taskkill /f /im ollama.exe 2>nul || exit 0
+          pkill ollama || true
 
       # Host set karke Ollama serve start karna aur 7B model pull karna
       - name: Setup Host, Start Ollama and Download 7B Model
-        shell: cmd
         run: |
-          set OLLAMA_HOST=0.0.0.0
-          start /B ollama serve
-          timeout /t 10 /nobreak
+          export OLLAMA_HOST=0.0.0.0
+          ollama serve &
+          sleep 10
           ollama pull qwen2.5:7b
 
-      # CMD session/workflow ko open rakhne ke liye infinite loop
+      # Workflow ko active/open rakhne ke liye infinite loop
       - name: Keep Workflow Alive
-        shell: cmd
         run: |
-          echo Ollama Server is running on port 11434...
-          powershell -Command "while ($true) { Start-Sleep -Seconds 3600 }"
+          echo "Ollama Server is running on port 11434..."
+          sleep infinity

@@ -1,23 +1,21 @@
 name: Ollama Server Host
 
 on:
-  workflow_dispatch: # Actions tab se manually start karne ke liye
+  workflow_dispatch:
 
 jobs:
   run-ollama:
-    runs-on: ubuntu-latest # Windows ki jagah Ubuntu (Linux) use karein
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Tailscale connection setup
+      # Tailscale Auth Key se connect karein
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
+          authkey: ${{ secrets.TS_AUTHKEY }}
 
       # Ollama install karna
       - name: Install Ollama

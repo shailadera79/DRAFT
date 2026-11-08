@@ -1,0 +1,20 @@
+{
+  "name": "browser-tizen",
+  "appName": "Browser Tizen",
+  "version": "0.1.0",
+  "description": "Universal TizenBrew browser shell: Windows Chrome 95 user-agent, virtual remote mouse and D-pad scrolling.",
+  "packageType": "mods",
+  "websiteURL": "https://example.com/",
+  "main": "inject.js",
+  "evaluateScriptOnDocumentStart": true,
+  "keys": [
+    "ColorF0Red",
+    "ColorF1Green",
+    "ColorF2Yellow",
+    "ColorF3Blue"
+  ],
+  "repository": {
+    "url": "https://github.com/shailadera79/DRAFT/tree/browser-tizen"
+  },
+  "license": "MIT"
+}
